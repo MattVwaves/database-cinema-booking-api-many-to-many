@@ -4,6 +4,6 @@ const { getSeats, createTicket } = require("../controllers/seats");
 const router = express.Router();
 
 router.get("/:id", getSeats);
-router.post("/tickets", createTicket);
+router.post("/", createTicket);
 
 module.exports = router;

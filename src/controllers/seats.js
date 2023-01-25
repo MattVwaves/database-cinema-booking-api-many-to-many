@@ -5,48 +5,48 @@ const prisma = require("../utils/prisma");
 
 const getSeats = async (req, res) => {
   const { id } = req.params;
-  console.log(id);
   const seats = await prisma.seat.findMany({
     where: {
       screenId: Number(id),
-    },
-    include: {
-      ticket: true,
     },
   });
   res.json({ seats });
 };
 
 const createTicket = async (req, res) => {
-  const { screeningId, customerId } = req.body;
-  const ticket = await prisma.ticket.create({
+  const { screeningId, customerId, seatIds } = req.body;
+  console.log(req.body);
+
+  const createdTicket = await prisma.ticket.create({
     data: {
-      screening: {
-        connect: {
-          id: screeningId,
-        },
-      },
-      customer: {
-        connect: {
-          id: customerId,
-        },
-      },
-      seats: {
-        connect: [
-          {
-            id: 1,
-          },
-        ],
-      },
-    },
-    include: {
-      screening: true,
-      customer: true,
-      seats: true,
+      screeningId: screeningId,
+      customerId: customerId,
     },
   });
 
-  res.json({ ticket });
+  await prisma.ticketSeats.createMany({
+    data: seatIds.map((id) => {
+      return {
+        seatId: id,
+        ticketId: createdTicket.id,
+      };
+    }),
+  });
+
+  const ticket = await prisma.ticket.findFirst({
+    where: {
+      id: createdTicket.id,
+    },
+    include: {
+      seats: {
+        include: {
+          seat: true,
+        },
+      },
+    },
+  });
+
+  res.json({ data: ticket });
 };
 
 module.exports = { getSeats, createTicket };
